@@ -37,13 +37,11 @@
             margin: 20px 0 4px 4px;
         }
 
-        /* Виджет статуса дня под заголовком */
         .status-badge {
             font-size: 14px;
             font-weight: 500;
             color: var(--sub-text);
             margin: 0 0 20px 4px;
-            transition: color 0.3s ease;
         }
 
         .calendar-strip {
@@ -198,7 +196,6 @@
     </div>
 
     <h1 id="mainTitle">Сегодня</h1>
-    <!-- Текстовый статус нашего прогресса за день -->
     <div id="statusText" class="status-badge">Впереди много дел 🎯</div>
 
     <div class="add-habit-form">
@@ -210,17 +207,17 @@
 </div>
 
 <script>
-    // Автосброс кэша для поддержки виджета статуса
-    if (localStorage.getItem('savedAppleHabits') && !localStorage.getItem('statusSystemActive')) {
+    // Принудительно очищаем старый конфликтный кэш один раз
+    if (!localStorage.getItem('v3_clear')) {
         localStorage.clear();
-        localStorage.setItem('statusSystemActive', 'true');
+        localStorage.setItem('v3_clear', 'true');
     }
 
     let currentActiveDay = 'Ср';
-    let realToday = 'Ср';
     
+    // Жестко прописанная база, которая отобразится в любом случае
     let myHabits = JSON.parse(localStorage.getItem('savedAppleHabits')) || [
-        { id: 101, name: '💧 Пить воду', completedDays: ['Ср'] },
+        { id: 101, name: '💧 Пить воду', completedDays: [] },
         { id: 102, name: '📖 Чтение книг', completedDays: [] }
     ];
 
@@ -231,7 +228,7 @@
         document.querySelectorAll('.day-number').forEach(el => el.classList.remove('active'));
         const targetElement = document.getElementById('num-' + clickedDay);
         if (targetElement) targetElement.classList.add('active');
-        document.getElementById('mainTitle').innerText = (clickedDay === realToday) ? 'Сегодня' : 'Привычки (' + clickedDay + ')';
+        document.getElementById('mainTitle').innerText = (clickedDay === 'Ср') ? 'Сегодня' : 'Привычки (' + clickedDay + ')';
         drawPage();
     }
 
@@ -256,23 +253,18 @@
         return streak;
     }
 
-    // Умная функция обновления виджета мотивации
     function updateMotivationStatus(total, done) {
         const statusElement = document.getElementById('statusText');
         if (!statusElement) return;
 
         if (total === 0) {
             statusElement.innerText = 'Добавь свои первые привычки выше 🚀';
-            statusElement.style.color = 'var(--sub-text)';
         } else if (done === 0) {
             statusElement.innerText = 'Впереди много дел 🎯';
-            statusElement.style.color = 'var(--sub-text)';
         } else if (done === total) {
             statusElement.innerText = 'День закрыт на 100%! 🎉';
-            statusElement.style.color = 'var(--apple-blue)';
         } else {
             statusElement.innerText = `Отличное начало! Сделано ${done} из ${total} ⚡`;
-            statusElement.style.color = 'var(--apple-orange)';
         }
     }
 
@@ -305,6 +297,21 @@
             container.appendChild(card);
         });
 
-        // Обновляем текст под заголовком
         updateMotivationStatus(totalHabitsCount, completedHabitsCount);
+        localStorage.setItem('savedAppleHabits', JSON.stringify(myHabits));
+    }
+
+    function checkHabit(id) {
+        myHabits.forEach(habit => {
+            if (habit.id === id) {
+                const index = habit.completedDays.indexOf(currentActiveDay);
+                if (index > -1) {
+                    habit.completedDays.splice(index, 1);
+                } else {
+                    habit.completedDays.push(currentActiveDay);
+                }
+            }
+        });
+        drawPage();
+    }
 
