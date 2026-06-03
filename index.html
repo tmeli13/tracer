@@ -37,7 +37,6 @@
             margin: 20px 0 10px 4px;
         }
 
-        /* Календарная строка */
         .calendar-strip {
             display: flex;
             justify-content: space-between;
@@ -78,7 +77,6 @@
             font-weight: 600;
         }
 
-        /* Форма добавления */
         .add-habit-form {
             background: var(--card-bg);
             border-radius: 14px;
@@ -108,7 +106,6 @@
             cursor: pointer;
         }
 
-        /* Список карточек */
         .habit-list {
             display: flex;
             flex-direction: column;
@@ -135,14 +132,10 @@
             font-weight: 600;
         }
 
-        /* Счетчик дней с огоньком */
         .habit-streak {
             font-size: 13px;
             color: var(--apple-orange);
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 4px;
         }
 
         .actions {
@@ -206,13 +199,17 @@
 </div>
 
 <script>
+    // МАГИЧЕСКИЙ АВТОСБРОС: если память старая — чистим её полностью
+    if (localStorage.getItem('savedAppleHabits') && !localStorage.getItem('streakSystemActive')) {
+        localStorage.clear();
+        localStorage.setItem('streakSystemActive', 'true');
+    }
+
     let currentActiveDay = 'Ср';
-    const daysOrder = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     
-    // Загружаем привычки из памяти браузера, чтобы они сохранялись навсегда
     let myHabits = JSON.parse(localStorage.getItem('savedAppleHabits')) || [
-        { id: 101, name: '💧 Пить воду', completedDays: ['Ср'], streak: 1 },
-        { id: 102, name: '📖 Чтение книг', completedDays: [], streak: 0 }
+        { id: 101, name: '💧 Пить воду', completedDays: ['Ср'] },
+        { id: 102, name: '📖 Чтение книг', completedDays: [] }
     ];
 
     const emojis = { 'вод': '💧', 'спорт': '🏃', 'бег': '🏃', 'чита': '📖', 'книг': '📚', 'сон': '😴', 'чист': '🧼' };
@@ -226,25 +223,17 @@
         drawPage();
     }
 
-    // Умная функция подсчета серии дней (стрика)
     function calculateStreak(completedDays) {
         let streak = 0;
-        // Начинаем проверку со среды (текущего дня) назад к понедельнику
-        let checkDay = 'Ср';
-        
-        // Если сегодня выполнено, начинаем считать
         if (completedDays.includes('Ср')) {
             streak = 1;
-            // Смотрим вчерашний день (Вторник)
             if (completedDays.includes('Вт')) {
                 streak = 2;
-                // Смотрим позавчерашний день (Понедельник)
                 if (completedDays.includes('Пн')) {
                     streak = 3;
                 }
             }
         } else {
-            // Если сегодня не выполнено, проверяем, была ли серия до вчерашнего дня
             if (completedDays.includes('Вт')) {
                 streak = 1;
                 if (completedDays.includes('Пн')) {
@@ -262,16 +251,14 @@
 
         myHabits.forEach(habit => {
             const isDone = habit.completedDays.includes(currentActiveDay);
-            
-            // Пересчитываем стрик перед выводом на экран
-            habit.streak = calculateStreak(habit.completedDays);
+            const currentStreak = calculateStreak(habit.completedDays);
 
             const card = document.createElement('div');
             card.className = 'habit-card';
             card.innerHTML = `
                 <div class="habit-details">
                     <div class="habit-name">${habit.name}</div>
-                    <div class="habit-streak" style="${habit.streak > 0 ? '' : 'display:none;'}">🔥 Серия: ${habit.streak} дн.</div>
+                    <div class="habit-streak" style="${currentStreak > 0 ? '' : 'display:none;'}">🔥 Серия: ${currentStreak} дн.</div>
                 </div>
                 <div class="actions">
                     <button class="delete-btn" onclick="removeHabit(${habit.id})">✕</button>
@@ -281,8 +268,8 @@
             container.appendChild(card);
         });
 
-        // Сохраняем обновленные данные в память браузера
         localStorage.setItem('savedAppleHabits', JSON.stringify(myHabits));
+        localStorage.setItem('streakSystemActive', 'true');
     }
 
     function checkHabit(id) {
@@ -310,3 +297,30 @@
             if (text.toLowerCase().includes(key)) {
                 detectedEmoji = emojis[key];
                 break;
+            }
+        }
+
+        myHabits.push({
+            id: Date.now(),
+            name: detectedEmoji + ' ' + text,
+            completedDays: []
+        });
+
+        input.value = '';
+        drawPage();
+    }
+
+    function removeHabit(id) {
+        myHabits = myHabits.filter(h => h.id !== id);
+        drawPage();
+    }
+
+    document.getElementById('habitInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') addNewHabit();
+    });
+
+    drawPage();
+</script>
+
+</body>
+</html>
