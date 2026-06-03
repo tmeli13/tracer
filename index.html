@@ -207,16 +207,12 @@
 </div>
 
 <script>
-    // Принудительно очищаем старый конфликтный кэш один раз
-    if (!localStorage.getItem('v3_clear')) {
-        localStorage.clear();
-        localStorage.setItem('v3_clear', 'true');
-    }
+    // Принудительная очистка кэша старых версий
+    localStorage.clear();
 
     let currentActiveDay = 'Ср';
     
-    // Жестко прописанная база, которая отобразится в любом случае
-    let myHabits = JSON.parse(localStorage.getItem('savedAppleHabits')) || [
+    let myHabits = [
         { id: 101, name: '💧 Пить воду', completedDays: [] },
         { id: 102, name: '📖 Чтение книг', completedDays: [] }
     ];
@@ -298,7 +294,6 @@
         });
 
         updateMotivationStatus(totalHabitsCount, completedHabitsCount);
-        localStorage.setItem('savedAppleHabits', JSON.stringify(myHabits));
     }
 
     function checkHabit(id) {
@@ -315,3 +310,12 @@
         drawPage();
     }
 
+    function addNewHabit() {
+        const input = document.getElementById('habitInput');
+        if (!input) return;
+        const text = input.value.trim();
+        if (text === '') return;
+
+        let detectedEmoji = '✨';
+        for (let key in emojis) {
+            if (text.toLowerCase().includes(key)) {
