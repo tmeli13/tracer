@@ -207,11 +207,13 @@
 </div>
 
 <script>
+    // Принудительно чистим старый кэш, чтобы запустить новую версию
+    localStorage.clear();
+
     let currentActiveDay = 'Ср';
     let realToday = 'Ср';
     
-    // Загружаем сохраненные привычки ИЛИ создаем базовые, если памяти нет
-    let myHabits = JSON.parse(localStorage.getItem('apple_habits_v4')) || [
+    let myHabits = [
         { id: 101, name: '💧 Пить воду', completedDays: [] },
         { id: 102, name: '📖 Чтение книг', completedDays: [] }
     ];
@@ -223,7 +225,14 @@
         document.querySelectorAll('.day-number').forEach(el => el.classList.remove('active'));
         const targetElement = document.getElementById('num-' + clickedDay);
         if (targetElement) targetElement.classList.add('active');
-        document.getElementById('mainTitle').innerText = (clickedDay === realToday) ? 'Сегодня' : 'Привычки (' + clickedDay + ')';
+        
+        // Исправленная строчка переключения заголовка
+        if (clickedDay === realToday) {
+            document.getElementById('mainTitle').innerText = 'Сегодня';
+        } else {
+            document.getElementById('mainTitle').innerText = 'Привычки (' + clickedDay + ')';
+        }
+        
         drawPage();
     }
 
@@ -293,7 +302,7 @@
         });
 
         updateMotivationStatus(totalHabitsCount, completedHabitsCount);
-        localStorage.setItem('apple_habits_v4', JSON.stringify(myHabits));
+        localStorage.setItem('apple_habits_v5', JSON.stringify(myHabits));
     }
 
     function checkHabit(id) {
@@ -310,7 +319,3 @@
         drawPage();
     }
 
-    function addNewHabit() {
-        const input = document.getElementById('habitInput');
-        if (!input) return;
-        const text = input.value.trim();
